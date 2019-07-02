@@ -3,7 +3,7 @@
 Nanostack Border Router is a generic mbed border router implementation that provides the 6LoWPAN ND, Thread or Wi-SUN border router initialization logic.
 
 
-Border router is a network gateway between a wireless 6LoWPAN mesh network and a backhaul network. It controls and relays traffic between the two networks. In a typical setup, a 6LoWPAN border router is connected to another router in the backhaul network (over Ethernet or a serial line) which in turn forwards traffic to/from the internet or a private company LAN, for instance.
+Border router is a network gateway between a wireless 6LoWPAN mesh network and a backhaul network. It controls and relays traffic between the two networks. In a typical setup, a 6LoWPAN border router is connected to another router in the backhaul network (over Ethernet, Cellular or a serial line) which in turn forwards traffic to/from the internet or a private company LAN, for instance.
 
 ![](images/br_role.png)
 
@@ -75,7 +75,7 @@ Following external driver can be added as described [above](#adding-connectivity
 
 * [STM Spirit1](https://github.com/ARMmbed/stm-spirit1-rf-driver)
 
-The backhaul is either SLIP or Ethernet. For Ethernet either an mbed OS "EMAC"
+The backhaul is either SLIP, Ethernet or Cellular. For Ethernet either an mbed OS "EMAC"
 driver can be used, or a native Nanostack driver. Currently, native Nanostack drivers exists for the following backhauls:
 
 * [K64F Ethernet](https://github.com/ARMmbed/sal-nanostack-driver-k64f-eth)
@@ -185,12 +185,12 @@ The [mbedtls_thread_config.h](source/mbedtls_thread_config.h) file configures mb
 
 #### Backhaul connectivity
 
-The Nanostack border router application can be connected to a backhaul network. This enables you to connect the devices in a 6LoWPAN mesh network to the internet or a private LAN. Currently, the application supports SLIP (IPv6 encapsulation over a serial line) and Ethernet backhaul connectivity.
+The Nanostack border router application can be connected to a backhaul network. This enables you to connect the devices in a 6LoWPAN mesh network to the internet or a private LAN. Currently, the application supports SLIP (IPv6 encapsulation over a serial line), Ethernet and Cellular backhaul connectivity.
 
 ```
 "config": {
     "backhaul-driver": {
-        "help": "options are ETH, SLIP, EMAC",
+        "help": "options are ETH, SLIP, EMAC, CELL",
         "value": "EMAC"
     },
     "backhaul-mac-src": {
@@ -206,7 +206,7 @@ The Nanostack border router application can be connected to a backhaul network. 
 }
 ```
 
-You can select your preferred option through the configuration file (field `backhaul-driver` in the `config` section). The value `SLIP` includes the SLIP driver, while the value `ETH` compiles the border router application with Nanostack native Ethernet backhaul support. `EMAC` uses the board's default mbed OS network driver, which must be EMAC-based (derived from EMACInterface).
+You can select your preferred option through the configuration file (field `backhaul-driver` in the `config` section). The value `SLIP` includes the SLIP driver, while the value `ETH` compiles the border router application with Nanostack native Ethernet backhaul support. `EMAC` uses the board's default mbed OS network driver, which must be EMAC-based (derived from EMACInterface). `CELL` uses boards's default mbed OS cellular device or external cellular device that is configured to provide default cellular device.
 
 You can define the MAC address on the backhaul interface manually (field `backhaul-mac-src` value `CONFIG`). Alternatively, you can use the MAC address provided by the development board (field `backhaul-mac-src` value `BOARD`). By default, the backhaul driver is set to `EMAC` and the MAC address source is `BOARD`.
 
@@ -216,6 +216,7 @@ If you use the static bootstrap mode, you need to configure a default route on t
 
 When using the autonomous mode in the 6LoWPAN ND configuration, you can set the `prefix-from-backhaul` option to `true` to use the same backhaul prefix on the mesh network side as well. This allows the mesh nodes to be directly connectable from the outside of the mesh network. In the Thread network, it is enough that `backhaul-dynamic-bootstrap` is set to true.
 
+For `CELL` backhaul, no configuration options for addresses are provided. Cellular backhaul device works always in autonomous mode and the border router learns the IPv6 prefix information from the cellular access.
 
 #### Note on the SLIP backhaul driver
 
@@ -244,6 +245,10 @@ When `backhaul_driver` is set to `EMAC`, the border router will use the target's
 To use a different interface, change the setting of `target.default-network-interface-type` in `mbed_app.json` to point to a different interface type, or add an overriding definition of `NetworkInterface::get_default_instance` to the application - this will override any default supplied by the target board.
 
 To use Wi-Fi or other more complex EMAC drivers, necessary configuration parameters must be supplied, either via `mbed_app.json` or configuration in the `NetworkInterface::get_default_instance` override. Also, the driver must follow the guidelines of `EMACInterface` - the border router does not call the `EMACInterface`'s `connect` method, so the driver must work with only a `powerup` call to the `EMAC`.
+
+#### Note on CELL backhaul
+
+When `backhaul_driver` is set to `CELL`, the border router will use the target's default cellular device, as supplied by `CellularInterface::get_default_instance`. Cellular device must support IPv6 PPP connection mode. Board must supply the default mbed OS cellular device or there must be an external cellular device that is configured to provide default cellular device to mbed OS.
 
 ### Switching the RF shield
 
